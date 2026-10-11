@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>NEON RACER</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080b16;color:white;font-family:Arial;text-align:center}
+h1{color:#00f5ff;text-shadow:0 0 15px #00f5ff;letter-spacing:3px}
+.stats{display:flex;justify-content:space-around;margin:10px auto;max-width:400px}
+.stats div{background:#172137;padding:10px;border-radius:10px;font-size:12px}
+.stats b{display:block;font-size:20px;color:#00f5ff;margin-top:5px}
+canvas{width:min(94vw,360px);height:auto;border:2px solid #00f5ff;border-radius:12px;display:block;margin:auto}
+.controls{display:flex;justify-content:center;gap:8px;margin:12px auto}
+button{background:#14223b;color:white;border:1px solid #00f5ff;border-radius:12px;padding:15px;font-weight:bold;font-size:17px;touch-action:none}
+#start{background:#00d9e8;color:#06121c}
+</style>
+</head>
+<body>
+<h1>NEON RACER</h1>
+<div class="stats">
+<div>TỐC ĐỘ<b id="speed">0</b></div>
+<div>ĐIỂM<b id="score">0</b></div>
+<div>KỶ LỤC<b id="best">0</b></div>
+</div>
+<canvas id="c" width="360" height="560"></canvas>
+<div class="controls">
+<button id="left">◀ TRÁI</button>
+<button id="start">CHƠI</button>
+<button id="right">PHẢI ▶</button>
+</div>
+<div class="controls">
+<button id="brake">▼ PHANH</button>
+<button id="gas">▲ TĂNG TỐC</button>
+</div>
+<p>Né xe đối thủ để lập kỷ lục!</p>
+<script>
+const c=document.getElementById("c"),ctx=c.getContext("2d");
+const $=id=>document.getElementById(id);
+const W=360,H=560,L=42,R=318;
+let car={x:180,y:455,w:32,h:54};
+let enemies=[],score=0,speed=5,best=0,offset=0;
+let running=false,keys={},lastSpawn=0,frame=0;
+try{best=Number(localStorage.getItem("neonBest"))||0}catch(e){}
+$("best").textContent=best;
+
+function box(x,y,w,h,color,r=5){
+ ctx.fillStyle=color;
+ ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);
+ ctx.fill();
+}
+function drawCar(px,py,w,h,color){
+ ctx.fillStyle="#050811";
+ box(px-w/2-3,py-h*.3,6,14,"#050811");
+ box(px+w/2-3,py-h*.3,6,14,"#050811");
+ box(px-w/2-3,py+h*.18,6,14,"#050811");
+ box(px+w/2-3,py+h*.18,6,14,"#050811");
+ ctx.shadowColor=color;ctx.shadowBlur=12;
+ box(px-w/2,py-h/2,w,h,color,7);
+ ctx.shadowBlur=0;
+ box(px-w*.32,py-h*.3,w*.64,h*.25,"#172e48",4);
+ box(px-w*.32,py+h*.12,w*.64,h*.19,"#172e48",4);
+ box(px-w*.36,py-h*.42,w*.22,4,"#d8ffff",2);
+ box(px+w*.14,py-h*.42,w*.22,4,"#d8ffff",2);
+}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ ctx.fillStyle="#10251f";ctx.fillRect(0,0,W,H);
+ ctx.fillStyle="#252b3b";ctx.fillRect(L,0,R-L,H);
+ ctx.fillStyle="#00eaff";ctx.fillRect(L,0,3,H);
+ ctx.fillRect(R-3,0,3,H);
+ ctx.fillStyle="#dce9ff";
+ for(let y=-75;y<H;y+=75){
+  let yy=(y+offset)%H;
+  ctx.fillRect(130,yy,3,35);
+  ctx.fillRect(227,yy,3,35);
+ }
+ enemies.forEach(e=>drawCar(e.x,e.y,32,52,e.color));
+ drawCar(car.x,car.y,car.w,car.h,"#00eaff");
+}
+function reset(){
+ car.x=180;enemies=[];score=0;speed=5;
+ offset=0;lastSpawn=0;frame=0;
+}
+function start(){
+ if(running)return;
+ reset();running=true;
+ $("start").textContent="ĐANG ĐUA";
+ requestAnimationFrame(loop);
+}
